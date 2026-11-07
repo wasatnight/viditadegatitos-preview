@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Escondite con Nini y Manchas</title><link rel="stylesheet" href="base.css"><link rel="stylesheet" href="natural.css"><link rel="stylesheet" href="escondite.css"><script defer src="escondite.js"></script></head>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Escondite con Nini y Manchas</title><link rel="stylesheet" href="base.css"><link rel="stylesheet" href="natural.css"><link rel="stylesheet" href="escondite.css?v=gatitas-celebracion-9"><script defer src="escondite.js?v=gatitas-celebracion-9"></script></head>
 <body><main class="wrap game">
 <a class="text-button" href="./#rincon-juego">← Volver a Viditadegatitos</a>
-<header><span class="eyebrow">UN RINCONCITO PARA JUGAR</span><h1>¿Dónde se metieron <em>Nini y Manchas?</em></h1><p>Explora las seis habitaciones. Acércate a un mueble y pulsa Buscar. Los maullidos suenan más cerca cuando hay una gatita en la habitación. Cuando encuentres a las dos, completarás tu álbum.</p></header>
+<header><span class="eyebrow">UN RINCONCITO PARA JUGAR</span><h1>¿Dónde se metieron <em>Nini y Manchas?</em></h1><p>Explora las seis habitaciones. Acércate a un mueble y pulsa Buscar. Sigue las pistas para encontrar sus escondites. Cuando encuentres a las dos, completarás tu álbum.</p></header>
 <div class="game-layout"><section aria-label="La casa de los escondites">
-<div class="game-room-bar"><strong id="room-name">Sala</strong><span id="room-map"></span><button id="game-sound" type="button" aria-pressed="false">Activar sonido</button></div>
-<canvas id="pixel-house" width="320" height="224" aria-label="Casa pixel art. Usa flechas para caminar y espacio para buscar." tabindex="0"></canvas>
-<button class="button primary" id="game-start" type="button">Empezar partida ♡</button><p class="game-keys">Flechas o WASD para caminar · Espacio para buscar</p>
+<div class="game-room-bar"><strong id="room-name">Sala</strong><span id="room-map"></span><button id="game-sound" type="button" aria-pressed="false">Activar música</button></div>
+<div class="game-screen"><canvas id="pixel-house" width="320" height="224" aria-label="Casa pixel art. Usa flechas para caminar y espacio para buscar." tabindex="0"></canvas><div id="game-discovery" class="game-discovery" role="status" hidden><span class="discovery-icon"></span><strong></strong></div></div>
+<p class="game-keys">Flechas o WASD para caminar · Espacio para buscar</p>
 <div class="game-pad" aria-label="Controles táctiles">
 <button data-move="up" aria-label="Arriba">↑</button>
 <button data-move="left" aria-label="Izquierda">←</button>
@@ -16,5 +16,5 @@
 </div>
 <p id="game-status" role="status">Las dos se escondieron en la casa. Busca los destellos junto a los muebles.</p>
 </section>
-<aside class="game-album" aria-label="Álbum del juego"><span class="eyebrow">TU ÁLBUM</span><h2 id="game-count">0 de 2 gatitas</h2><div id="game-photos"></div><h3>Mis tesoros</h3><p id="treasure-count">0 de 6 encontrados</p><ul id="game-treasures"></ul><button id="game-reset" class="button primary" type="button">Volver a jugar</button></aside></div>
+<aside class="game-album" aria-label="Álbum del juego"><span class="eyebrow">TU ÁLBUM</span><h2 id="game-count">0 de 2 gatitas</h2><div id="game-photos"></div><h3>Mis tesoros</h3><p id="treasure-count">0 de 18 encontrados</p><ul id="game-treasures"></ul><button id="game-reset" class="button primary" type="button">Volver a jugar</button></aside></div>
 </main></body></html>

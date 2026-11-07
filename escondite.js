@@ -61,44 +61,123 @@
   const roomName = document.querySelector('#room-name');
   const roomMap = document.querySelector('#room-map');
   const soundButton = document.querySelector('#game-sound');
-  const startButton = document.querySelector('#game-start');
   const treasures = document.querySelector('#game-treasures');
   const treasureCount = document.querySelector('#treasure-count');
-  const souvenirs = ['Lazo rosa','Cucharita de madera','Estrella de papel','Calcetín mini','Botón de corazón','Ratón de tela'];
+  const souvenirs = [
+    'Lazo rosa', 'Cucharita de madera', 'Estrella de papel',
+    'Calcetín mini', 'Botón de corazón', 'Ratón de tela',
+    'Pelota de colores', 'Pescadito de juguete', 'Ovillo de lana',
+    'Pluma suave', 'Cascabel dorado', 'Huellita de papel',
+    'Collar de luna', 'Sobre secreto', 'Cajita de cartón',
+    'Cepillo de Nini', 'Hoja del jardín', 'Foto de recuerdo',
+  ];
   let running = false;
   let introUntil = 0;
   let roomIndex = -1;
   let audio;
   let soundOn = false;
   let lastMeow = 0;
-  let lastStep = 0;
+  let soundOutput;
+  let musicOutput;
+  let nextMusicNote = 0;
+  let musicPosition = 0;
+  const melody = [
+    72, 76, 79, 76, 74, 77, 81, 79,
+    76, 74, 72, null, 67, 72, 74, 76,
+    69, 72, 76, 79, 77, 76, 74, null,
+    67, 71, 74, 77, 76, 74, 72, null,
+  ];
   const roomAt = (x,y) => Math.floor(y/224)*3 + Math.floor(x/320);
-  function tone(meow, volume) {
-    if (!soundOn || audio?.state !== 'running') return;
-    const now = audio.currentTime;
+  function playNote(note, when, length, volume, output = soundOutput) {
     const oscillator = audio.createOscillator();
     const gain = audio.createGain();
-    const length = meow ? .48 : .07;
-    oscillator.type = meow ? 'triangle' : 'sine';
-    oscillator.frequency.setValueAtTime(meow ? 510 : 105, now);
-    oscillator.frequency.exponentialRampToValueAtTime(meow ? 780 : 62, now + length*.33);
-    oscillator.frequency.exponentialRampToValueAtTime(meow ? 355 : 48, now + length);
-    gain.gain.setValueAtTime(.001, now);
-    gain.gain.exponentialRampToValueAtTime(volume, now+.035);
-    gain.gain.exponentialRampToValueAtTime(.001, now+length);
-    oscillator.connect(gain).connect(audio.destination);
-    oscillator.start(now);
-    oscillator.stop(now+length);
+    oscillator.type = 'sine';
+    oscillator.frequency.value = 440 * 2 ** ((note - 69) / 12);
+    gain.gain.setValueAtTime(0, when);
+    gain.gain.linearRampToValueAtTime(volume, when + .025);
+    gain.gain.exponentialRampToValueAtTime(.0001, when + length);
+    oscillator.connect(gain).connect(output);
+    oscillator.start(when);
+    oscillator.stop(when + length + .02);
+    oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
+  }
+  function scheduleMusic() {
+    if (!soundOn || audio?.state !== 'running' || document.hidden) return;
+    const now = audio.currentTime;
+    if (nextMusicNote < now) nextMusicNote = now + .04;
+    while (nextMusicNote < now + .15) {
+      const note = melody[musicPosition];
+      if (note !== null) playNote(note, nextMusicNote, .8, .055, musicOutput);
+      if (musicPosition % 8 === 0) {
+        const bass = [48, 53, 57, 55][Math.floor(musicPosition / 8)];
+        playNote(bass, nextMusicNote, 2.4, .035, musicOutput);
+        playNote(bass + 7, nextMusicNote + .04, 2.2, .018, musicOutput);
+      }
+      nextMusicNote += .38;
+      musicPosition = (musicPosition + 1) % melody.length;
+    }
+  }
+  async function discoverySound(cat = false) {
+    try {
+      if (audio?.state !== 'running') await unlockAudio();
+      const now = audio.currentTime;
+      if (cat && soundOn) {
+        musicOutput.gain.cancelScheduledValues(now);
+        musicOutput.gain.setValueAtTime(musicOutput.gain.value, now);
+        musicOutput.gain.linearRampToValueAtTime(.18, now + .06);
+        musicOutput.gain.setValueAtTime(.18, now + 1.8);
+        musicOutput.gain.linearRampToValueAtTime(1, now + 2.5);
+      }
+      if (cat) {
+        const celebration = [72, 76, 79, 84, 79, 84, 88];
+        celebration.forEach((note,index) => playNote(note, now + index * .15, .8, .15));
+        [72, 76, 79].forEach(note => playNote(note, now + 1.1, 1.15, .055));
+      } else {
+        [79, 84].forEach((note,index) => playNote(note, now + index * .11, .65, .075));
+      }
+    } catch {
+      message.textContent += ' Pulsa Activar música para recuperar el audio.';
+    }
+  }
+  async function unlockAudio() {
+    const AudioEngine = window.AudioContext || window.webkitAudioContext;
+    if (!AudioEngine) throw new Error('Audio no disponible');
+    if (!audio || audio.state === 'closed') {
+      audio = new AudioEngine();
+      soundOutput = audio.createGain();
+      soundOutput.gain.value = 1;
+      soundOutput.connect(audio.destination);
+      musicOutput = audio.createGain();
+      musicOutput.gain.value = 0;
+      musicOutput.connect(soundOutput);
+    }
+    // Start a source during the gesture so Safari can unlock its audio output.
+    const source = audio.createBufferSource();
+    source.buffer = audio.createBuffer(1, 1, audio.sampleRate);
+    source.connect(audio.destination);
+    source.start();
+    await audio.resume();
+    if (audio.state !== 'running') throw new Error('Audio suspendido');
   }
   soundButton.addEventListener('click', async () => {
     try {
-      audio ??= new AudioContext();
-      if (!soundOn) await audio.resume();
+      if (!soundOn) await unlockAudio();
       soundOn = !soundOn;
       soundButton.setAttribute('aria-pressed', String(soundOn));
-      soundButton.textContent = soundOn ? 'Silenciar' : 'Activar sonido';
-      if (soundOn) tone(true,.055);
-    } catch { message.textContent = 'El sonido no está disponible en este navegador.'; }
+      soundButton.textContent = soundOn ? 'Silenciar música' : 'Activar música';
+      musicOutput.gain.cancelScheduledValues(audio.currentTime);
+      musicOutput.gain.setTargetAtTime(soundOn ? 1 : 0, audio.currentTime, .08);
+      if (soundOn) {
+        nextMusicNote = audio.currentTime + .04;
+        scheduleMusic();
+        message.textContent = 'Música activada ♡ Los descubrimientos tienen su propio tintineo.';
+      }
+    } catch {
+      soundOn = false;
+      soundButton.setAttribute('aria-pressed', 'false');
+      soundButton.textContent = 'Activar música';
+      message.textContent = 'No se pudo activar el audio. Revisa el volumen y vuelve a pulsar Activar música.';
+    }
   });
   const cats = [
     {name:'Nini',photo:'nini-rascador.png', fur:'#51403b', patch:'#b6784e'},
@@ -324,8 +403,6 @@
     if(index!==roomIndex){
       roomIndex=index;
       if(running) {
-        const close = hiding.some(p => p.room === index && !p.checked);
-        tone(true, close ? .13 : .04);
         lastMeow=time;
       }
       roomName.textContent=rooms[index][0];
@@ -345,7 +422,16 @@
     places.filter(p=>p.room===index).forEach(p=>{
       if (p.room !== 4 || p.name !== 'buró') furniture(p,p.kind);
       if(p.cat)kitten(p.cat,p.x+p.w/2,p.y+p.h+10);
-      if(p===target) label('?',p.x+p.w/2-3,p.y+p.h+14);
+      if(p===target) {
+        const bx = Math.round(p.x+p.w/2-7);
+        const by = Math.round(p.y+p.h+4);
+        rect(bx,by,15,19,'#71344e');
+        rect(bx+1,by+1,13,17,'#fff1d6');
+        const pixels = ['01110','11011','00011','00110','00100','00000','00100'];
+        pixels.forEach((row,y) => [...row].forEach((pixel,x) => {
+          if (pixel === '1') rect(bx+3+x*2,by+2+y*2,2,2,'#71344e');
+        }));
+      }
     });
     ctx.restore();
     decorations.forEach(detail => rect(...detail));
@@ -385,6 +471,51 @@
       player.y >= p.y-10 && player.y <= p.y+p.h+23);
   }
 
+  const discovery = document.querySelector('#game-discovery');
+  const discoveryIcon = discovery.querySelector('.discovery-icon');
+  const discoveryTitle = discovery.querySelector('strong');
+  let discoveryTimer;
+  const smallFinds = ['Papel arrugado', 'Hilo de lana', 'Plumita perdida', 'Un bigotito', 'Un pelito'];
+  let smallFindIndex = 0;
+  const itemArt = {
+    'Papel arrugado': '<path fill="#f4dfb9" d="M8 3h12v4h6v8h4v8h-7v6H9v-4H3V12h5z"/><path fill="#c19c83" d="M10 8h3v8h-3zM15 16h9v3h-9zM9 23h9v3H9z"/>',
+    'Hilo de lana': '<path fill="#bd9cca" d="M3 5h18v4H7v8h20v11H11v-4h12v-3H3z"/>',
+    'Plumita perdida': '<path fill="#aac4ba" d="M22 2h6v13h-4v6h-8v4H8V13h5V7h9z"/><path fill="#fff0dc" d="M21 8h3v7h-4v6h-4v5h-4v6H8v-8h4v-6h4v-6h5z"/>',
+    'Un bigotito': '<path fill="#765144" d="M2 25h4v-5h4v-5h6v-5h14v3H17v5h-6v5H7v5H2z"/>',
+    'Lazo rosa': '<path fill="#e3a2bc" d="M3 9h7v3h4V9h7v14h-7v-3h-4v3H3z"/><path fill="#fff0dc" d="M10 13h4v6h-4z"/>',
+    'Cucharita de madera': '<path fill="#dca367" d="M8 2h8v3h3v8h-5v17h-4V13H5V5h3z"/><path fill="#f6ce94" d="M9 5h6v6H9z"/>',
+    'Estrella de papel': '<path fill="#f2cd78" d="M14 2h4v8h8v4h6v4h-8v6h-4v8h-8v-8H8v-6H0v-4h6v-4h8z"/>',
+    'Calcetín mini': '<path fill="#a9b9d3" d="M12 3h14v19h-4v4h-4v4H4v-4H1v-8h11z"/><path fill="#fff0dc" d="M12 3h14v5H12zM1 20h7v8H4v-2H1z"/>',
+    'Botón de corazón': '<path fill="#e3a2bc" d="M4 4h8v4h8V4h8v4h4v12h-4v4h-4v4h-4v4h-8v-4H8v-4H4v-4H0V8h4z"/><path fill="#71344e" d="M10 13h3v3h-3zM19 13h3v3h-3z"/>',
+    'Ratón de tela': '<path fill="#b3beb4" d="M5 12h18v4h4v10H3V16h2z"/><path fill="#e3a2bc" d="M5 5h8v9H5zM18 5h8v9h-8z"/><path fill="#513444" d="M9 18h3v3H9zM20 18h3v3h-3z"/><path fill="#d58ca5" d="M14 23h4v3h-4z"/>',
+    'Pelota de colores': '<path fill="#e7a6be" d="M9 2h14v4h5v5h3v12h-4v5H9v-4H3V10h6z"/><path fill="#f3d386" d="M14 2h7v26h-7z"/><path fill="#a0bccb" d="M4 13h26v6H4z"/>',
+    'Pescadito de juguete': '<path fill="#90b7bf" d="M7 8h13v4h5l7-8v24l-7-8h-5v4H7v-4H3V12h4z"/><path fill="#513444" d="M8 12h3v3H8z"/><path fill="#f5d68c" d="M16 8h4v16h-4z"/>',
+    'Ovillo de lana': '<path fill="#b6a2cb" d="M8 3h15v4h5v17h-5v4H8v-4H4V7h4zM23 25h4v4h5v3h-9z"/><path fill="#e4d3ed" d="M8 8h15v3H8zM8 15h15v3H8zM10 22h11v3H10z"/>',
+    'Pluma suave': '<path fill="#a2c2b0" d="M22 2h7v11h-4v6h-5v5h-7v-5H8v-7h5V7h5V3z"/><path fill="#fff0dc" d="M21 10h3v5h-4v5h-4v5h-4v7H8v-9h4v-5h4v-5h5z"/>',
+    'Cascabel dorado': '<path fill="#edc16c" d="M11 1h10v5h5v5h4v14h-5v4H7v-4H2V11h4V6h5z"/><path fill="#fff0dc" d="M13 3h6v3h-6zM7 10h4v7H7z"/><path fill="#765144" d="M14 18h4v6h-4zM8 24h16v3H8z"/>',
+    'Huellita de papel': '<path fill="#edafbc" d="M4 6h5v8H4zM12 1h5v9h-5zM21 2h5v9h-5zM27 9h5v8h-5zM10 16h12v4h5v8h-5v3H8v-3H4v-7h6z"/>',
+    'Collar de luna': '<path fill="#8eaec2" d="M5 3h22v4H5zM2 7h4v12H2zM26 7h4v12h-4zM6 18h7v4H6zM20 18h6v4h-6z"/><path fill="#efd28b" d="M14 19h7v4h-4v5h7v3H12v-4H9v-5h5z"/>',
+    'Sobre secreto': '<path fill="#f4dfb9" d="M2 7h28v22H2z"/><path fill="#be9475" d="M2 7h5v4h5v4h8v-4h5V7h5v4h-5v4h-5v4h-8v-4H7v-4H2z"/><path fill="#cd829d" d="M13 18h6v6h-6z"/>',
+    'Cajita de cartón': '<path fill="#c89565" d="M3 11h26v19H3z"/><path fill="#edc492" d="M2 5h12v6H2zM18 5h12v6H18z"/><path fill="#a27051" d="M3 11h26v4H3z"/><path fill="#f4dca9" d="M14 15h4v15h-4z"/>',
+    'Cepillo de Nini': '<path fill="#e1a4bc" d="M6 4h20v15H6zM13 19h6v12h-6z"/><path fill="#fff0dc" d="M9 7h2v9H9zM15 7h2v9h-2zM21 7h2v9h-2z"/>',
+    'Hoja del jardín': '<path fill="#97ad7e" d="M20 2h10v12h-4v6h-6v4H8v-4H4V10h6V6h10z"/><path fill="#d8d9a0" d="M22 6h4v4h-4v4h-4v4h-4v4h-4v8H6V20h4v-6h6v-4h6z"/>',
+    'Foto de recuerdo': '<path fill="#fff4e0" d="M2 2h28v30H2z"/><path fill="#b5c8bb" d="M5 5h22v19H5z"/><path fill="#795c51" d="M9 9h4v3h6V9h4v12H9z"/><path fill="#e0a16a" d="M10 12h5v7h-5z"/><path fill="#513444" d="M12 16h2v2h-2zM19 16h2v2h-2z"/>',
+    'Un pelito': '<path fill="#e3b87c" d="M6 2h4v4H6zM10 6h4v8h-4zM14 14h4v8h-4zM10 22h4v6h-4zM6 28h4v4H6z"/><path fill="#fff0dc" d="M22 5h3v3h-3zM27 10h3v3h-3z"/>',
+  };
+  function showDiscovery(name, cat) {
+    clearTimeout(discoveryTimer);
+    discovery.classList.toggle('cat-discovery', Boolean(cat));
+    discovery.classList.toggle('manchas-discovery', cat?.name === 'Manchas');
+    const catArt = cat ? '<path fill="'+cat.fur+'" d="M3 2h5v4h16V2h5v25h-5v3H8v-3H3z"/><path fill="'+cat.patch+'" d="M5 6h8v12H5zM21 17h6v8h-6z"/><path fill="#573747" d="M8 18h3v3H8zM22 18h3v3h-3z"/><path fill="#e3a2bc" d="M14 23h4v3h-4z"/>' : itemArt[name];
+    discoveryIcon.innerHTML = '<svg viewBox="0 0 32 32" aria-hidden="true" shape-rendering="crispEdges">'+catArt+'</svg>';
+    discoveryTitle.textContent = cat ? '¡Encontraste a '+name+'!' : '¡Encontraste '+name.toLowerCase()+'!';
+    discovery.hidden = false;
+    discovery.classList.remove('discovery-pop');
+    void discovery.offsetWidth;
+    discovery.classList.add('discovery-pop');
+    discoveryTimer = setTimeout(() => { discovery.hidden = true; }, cat ? 4200 : 2600);
+  }
+
   function search() {
     if(!running || last<introUntil) return;
     const place=nearby();
@@ -394,18 +525,27 @@
     if(!cat){
       if (place.treasure) {
         const item = document.createElement('li');
-        item.textContent = '✧ ' + place.treasure;
+        const icon = document.createElement('span');
+        icon.setAttribute('aria-hidden', 'true');
+        icon.innerHTML = '<svg viewBox="0 0 32 32" shape-rendering="crispEdges">'+itemArt[place.treasure]+'</svg>';
+        item.append(icon, document.createTextNode(place.treasure));
         treasures.append(item);
-        treasureCount.textContent = treasures.children.length + ' de 6 encontrados';
+        treasureCount.textContent = treasures.children.length + ' de ' + souvenirs.length + ' encontrados';
         message.textContent = '¡Encontraste un tesoro! ' + place.treasure + '.';
-        tone(false,.09);
+        showDiscovery(place.treasure);
+        discoverySound();
       } else {
-        message.textContent='En '+place.name+' solo quedó un pelito. ¡Sigue buscando!';
+        const smallFind = smallFinds[smallFindIndex % smallFinds.length];
+        smallFindIndex++;
+        message.textContent='En '+place.name+' encontraste '+smallFind.toLowerCase()+'. ¡Sigue buscando los tesoros!';
+        showDiscovery(smallFind);
+        discoverySound();
       }
       return;
     }
     place.cat=cat;
-    tone(true,.13);
+    showDiscovery(cat.name, cat);
+    discoverySound(true);
     const card=document.createElement('figure');
     const photo=document.createElement('img');
     const caption=document.createElement('figcaption');
@@ -419,16 +559,26 @@
   }
 
   function reset() {
+    clearTimeout(discoveryTimer);
+    discovery.hidden = true;
+    smallFindIndex = 0;
     const pairs=places.flatMap(first=>places.filter(second=>first!==second).map(second=>[first,second]))
       .filter(([a,b])=>!(hiding.includes(a)&&hiding.includes(b)));
     hiding=pairs[Math.floor(Math.random()*pairs.length)];
     places.forEach(p=>{p.checked=false;p.cat=null;p.treasure=null;});
-    souvenirs.forEach((name,room) => {
-      const choices=places.filter(p=>p.room===room && !hiding.includes(p));
+    souvenirs.forEach((name,index) => {
+      const room = index % rooms.length;
+      const choices=places.filter(p=>p.room===room && !hiding.includes(p) && !p.treasure);
       choices[Math.floor(Math.random()*choices.length)].treasure=name;
     });
+    const firstPlace = places.find(p => p.room === 0 && p.name === 'mesa de centro');
+    if (!hiding.includes(firstPlace) && !firstPlace.treasure) {
+      const donor = places.find(p => p.room === 0 && p.treasure);
+      firstPlace.treasure = donor.treasure;
+      donor.treasure = null;
+    }
     treasures.replaceChildren();
-    treasureCount.textContent='0 de 6 encontrados';
+    treasureCount.textContent='0 de '+souvenirs.length+' encontrados';
     player.x=78;player.y=165;player.facing=1;
     pressed.clear();found=0;album.replaceChildren();
     count.textContent='0 de 2 gatitas';
@@ -446,7 +596,6 @@
     player.x=x;player.y=y;
     if(dx) player.facing=Math.sign(dx);
     steps+=Math.hypot(dx,dy);
-    if(last-lastStep>245){lastStep=last;tone(false,.045);}
   }
 
   function frame(time) {
@@ -466,10 +615,10 @@
       const hidden=hiding.filter(p=>!p.checked);
       if(hidden.length){
         const near=hidden.some(p=>p.room===roomAt(player.x,player.y));
-        tone(true,near?.115:.025);
-        if(near) message.textContent=soundOn?'Oíste un miau en esta habitación…':'Parece que hay una gatita cerca…';
+        if(near) message.textContent='Parece que hay una gatita cerca…';
       }
     }
+    scheduleMusic();
     draw(time);
     requestAnimationFrame(frame);
   }
@@ -478,10 +627,21 @@
     if(direction){e.preventDefault();pressed.set(e.code,direction);}
     if(e.target===canvas&&(e.code==='Space'||e.key==='Enter')){e.preventDefault();if(!e.repeat)search();}
   });
+  document.querySelector('.game').addEventListener('pointerdown', () => {
+    if (soundOn && audio && audio.state !== 'running') unlockAudio().catch(() => {});
+  });
   window.addEventListener('keyup',e=>pressed.delete(e.code));
   window.addEventListener('blur',()=>pressed.clear());
+  const touchControls = document.querySelector('.game-pad');
+  touchControls.addEventListener('contextmenu', e => e.preventDefault());
+  touchControls.addEventListener('selectstart', e => e.preventDefault());
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) pressed.clear();
+  });
   document.querySelectorAll('[data-move]').forEach(button=>{
     button.addEventListener('pointerdown',e=>{
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      e.preventDefault();
       button.setPointerCapture(e.pointerId);
       pressed.set(e.pointerId,button.dataset.move);
       move(...directions[button.dataset.move].map(v=>v*4));
@@ -496,16 +656,15 @@
     introUntil=reduced.matches ? 0 : last+2200;
     lastMeow=last;
     roomIndex=-1;
-    startButton.hidden=true;
     if(introUntil) message.textContent='¡Ahí van Nini y Manchas!';
-    canvas.focus();
+    canvas.focus({preventScroll:true});
   }
-  startButton.addEventListener('click',startRound);
   document.querySelector('#game-reset').addEventListener('click',startRound);
-  reset();
-  message.textContent='Pulsa Empezar partida para ver a las gatitas correr.';
-
-  requestAnimationFrame(frame);
+  requestAnimationFrame(time => {
+    last = time;
+    startRound();
+    frame(time);
+  });
 })();
 
 
