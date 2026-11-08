@@ -140,6 +140,14 @@
     }
   }
   async function unlockAudio() {
+    // iOS otherwise treats Web Audio as ambient audio and follows the silent switch.
+    if (navigator.audioSession) {
+      try {
+        navigator.audioSession.type = 'playback';
+      } catch {
+        // Browsers without playback sessions can still use their normal audio output.
+      }
+    }
     const AudioEngine = window.AudioContext || window.webkitAudioContext;
     if (!AudioEngine) throw new Error('Audio no disponible');
     if (!audio || audio.state === 'closed') {
