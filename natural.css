@@ -362,29 +362,29 @@ body{background-repeat:repeat-y;background-position:center top;background-size:1
   .game-paw-copy {
     position: relative;
     inset: auto;
-    padding: 100px 30px 160px;
-    gap: 16px;
+    padding: 64px 40px 106px;
+    gap: 10px;
     color: #71344e;
   }
   .game-paw-copy h2 {
     max-width: 300px;
     margin: 0;
-    font-size: clamp(28px, 7.8vw, 36px);
+    font-size: clamp(23px, 6.4vw, 29px);
     line-height: 1.15;
     letter-spacing: -.035em;
     text-wrap: balance;
   }
   .game-paw-copy p {
     max-width: 280px;
-    font-size: 14px;
-    line-height: 1.65;
+    font-size: 13px;
+    line-height: 1.5;
     margin: 0;
     text-wrap: pretty;
   }
   .game-promo-label { color: #a15c71; font-size: 10px; letter-spacing: .1em; }
   .game-promo-button {
-    min-height: 48px;
-    padding: 14px 22px;
+    min-height: 44px;
+    padding: 11px 18px;
     background: #925163;
     color: #fff7ee;
     font-size: 14px;
@@ -392,5 +392,13 @@ body{background-repeat:repeat-y;background-position:center top;background-size:1
     margin-top: 2px;
   }
   .game-promo-button:hover { background: #71344e; }
-  .game-promo-detail { color: #986e6a; font-size: 11px; margin-top: 0; line-height: 1.5; }
+  .game-promo-detail { color: #986e6a; font-size: 10px; margin-top: 0; line-height: 1.5; }
 }
+
+.game-title-mobile { display: none; }
+@media(max-width:760px) {
+  .game-title-desktop { display: none; }
+  .game-title-mobile { display: inline; }
+}
+
+@media(max-width:760px) { .game-promo-detail { display: none; } }
