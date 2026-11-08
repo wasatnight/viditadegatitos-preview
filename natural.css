@@ -467,3 +467,17 @@ body{background-repeat:repeat-y;background-position:center top;background-size:1
   .header #navigation a:hover,
   .header #navigation a:focus-visible { background: #f8e2e8; transform: none; }
 }
+
+@font-face {
+  font-family: "Fredoka";
+  src: url("fredoka-medium.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+.header nav a,
+.header.scrolled nav a,
+.header .menu-toggle {
+  font-weight: 500;
+  text-shadow: none;
+}
