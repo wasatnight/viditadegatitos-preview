@@ -334,31 +334,37 @@ body{background-repeat:repeat-y;background-position:center top;background-size:1
 .game-paw-spark-one { top: 21%; left: 0; }
 .game-paw-spark-two { right: 2%; top: 62%; animation-delay: 1s; }
 @keyframes paw-spark { 50% { opacity: .4; transform: scale(.8) rotate(12deg); } }
+.game-controller-shape { display: none; }
 @media (max-width: 760px) {
-  .game-promotion { padding-block: 24px 48px; }
+  .game-promotion { padding-block: 32px 48px; }
   .game-paw {
     width: min(430px, 100%);
     aspect-ratio: auto;
     height: auto;
-    padding-top: 158px;
+    padding: 0;
   }
-  .game-paw-shape { height: 300px; }
-  .game-paw-shape path { display: none; }
+  .game-paw-shape, .game-paw-spark { display: none; }
+  .game-controller-shape {
+    display: block;
+    position: absolute;
+    inset: 0 -8px;
+    width: calc(100% + 16px);
+    height: 100%;
+    overflow: visible;
+    filter: drop-shadow(0 12px 12px #783e5120);
+  }
+  .controller-ears { fill: #e9a5b3; stroke: #ce8296; stroke-width: 2; stroke-linejoin: round; }
+  .controller-body { fill: #f5c4c2; stroke: #d397a1; stroke-width: 2; }
+  .controller-panel { fill: #fff1de; stroke: #dfb7a5; stroke-width: 1.5; }
+  .controller-dpad { fill: #d99baa; stroke: #a7667e; stroke-width: 2; stroke-linejoin: round; }
+  .controller-buttons { fill: #eaa4b6; stroke: #c47c93; stroke-width: 1.5; }
+  .controller-light { fill: #91ac91; }
   .game-paw-copy {
     position: relative;
     inset: auto;
-    padding: 48px 28px 46px;
+    padding: 100px 30px 160px;
     gap: 16px;
-    isolation: isolate;
-  }
-  .game-paw-copy::before {
-    content: "";
-    position: absolute;
-    inset: 0 -8px;
-    z-index: -1;
-    background: #925163;
-    border-radius: 48% 48% 40% 40% / 22% 22% 25% 25%;
-    box-shadow: 0 16px 28px #783e511c;
+    color: #71344e;
   }
   .game-paw-copy h2 {
     max-width: 300px;
@@ -375,15 +381,16 @@ body{background-repeat:repeat-y;background-position:center top;background-size:1
     margin: 0;
     text-wrap: pretty;
   }
-  .game-promo-label { font-size: 10px; letter-spacing: .1em; }
+  .game-promo-label { color: #a15c71; font-size: 10px; letter-spacing: .1em; }
   .game-promo-button {
     min-height: 48px;
     padding: 14px 22px;
+    background: #925163;
+    color: #fff7ee;
     font-size: 14px;
     gap: 14px;
     margin-top: 2px;
   }
-  .game-promo-detail { font-size: 11px; margin-top: 0; line-height: 1.5; }
-  .game-paw-spark-one { top: 18%; }
-  .game-paw-spark-two { top: 58%; right: -4%; }
+  .game-promo-button:hover { background: #71344e; }
+  .game-promo-detail { color: #986e6a; font-size: 11px; margin-top: 0; line-height: 1.5; }
 }
