@@ -402,3 +402,30 @@ body{background-repeat:repeat-y;background-position:center top;background-size:1
 }
 
 @media(max-width:760px) { .game-promo-detail { display: none; } }
+
+.game-button-mobile { display: none; }
+@media(max-width:760px) {
+  .game-paw-copy { padding: 64px 40px 132px; gap: 14px; }
+  .game-paw-copy h2 { line-height: 1.18; }
+  .game-paw-copy p { max-width: 240px; line-height: 1.6; }
+  .game-button-desktop { display: none; }
+  .game-button-mobile { display: inline-flex; align-items: center; gap: 9px; }
+  .game-promo-button {
+    min-height: 44px;
+    min-width: 116px;
+    padding: 10px 20px;
+    margin-top: 8px;
+    border: 1px solid #b8798c;
+    border-radius: 12px;
+    background: #f0c2c8;
+    color: #71344e;
+    box-shadow: 0 4px 0 #c58a9c, inset 0 1px 0 #fff4ec;
+    font-family: "Fredoka", "Trebuchet MS", sans-serif;
+    font-size: 14px;
+    letter-spacing: .07em;
+    transition: background .2s, transform .2s, box-shadow .2s;
+  }
+  .game-promo-button:hover { background: #f8d4d6; transform: translateY(-1px); }
+  .game-promo-button:active { transform: translateY(3px); box-shadow: 0 1px 0 #c58a9c; }
+  .game-promo-button:focus-visible { outline: 3px solid #71344e; outline-offset: 5px; }
+}
