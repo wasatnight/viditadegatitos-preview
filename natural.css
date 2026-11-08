@@ -481,3 +481,44 @@ body{background-repeat:repeat-y;background-position:center top;background-size:1
   font-weight: 500;
   text-shadow: none;
 }
+
+@media(max-width:760px) {
+  .illustrated-hero {
+    height: auto;
+    min-height: calc(100px + 56.25vw);
+    max-height: none;
+    padding: 118px 0 24px;
+    align-items: center;
+    border-radius: 0 0 30px 30px;
+  }
+  .illustrated-hero .hero-art { inset: 100px 0 0; }
+  .illustrated-hero .hero-art img {
+    object-fit: cover;
+    object-position: center;
+  }
+  .illustrated-hero::after {
+    top: 100px;
+    background: linear-gradient(90deg, #35152bbd, #5425407d 58%, #54254025),
+                linear-gradient(0deg, #35152b75, transparent 65%);
+  }
+  .illustrated-hero .natural-hero-content { padding: 0; }
+  .illustrated-hero h1 {
+    max-width: 360px;
+    margin: 0 0 12px;
+    font-size: clamp(30px, 7.7vw, 46px);
+    line-height: 1.04;
+    letter-spacing: -.045em;
+  }
+  .illustrated-hero .natural-hero-content > p {
+    max-width: 320px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #fff7ed;
+  }
+  .illustrated-hero .hero-actions { margin: 14px 0 0; }
+  .illustrated-hero .hero-actions .primary {
+    padding: 10px 18px;
+    min-height: 42px;
+    font-size: 11px;
+  }
+}
