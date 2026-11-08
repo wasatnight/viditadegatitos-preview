@@ -522,3 +522,9 @@ body{background-repeat:repeat-y;background-position:center top;background-size:1
     font-size: 11px;
   }
 }
+
+@media(max-width:760px) {
+  .illustrated-hero .hero-art { inset: 0; }
+  .illustrated-hero .hero-art img { object-position: center 42%; }
+  .illustrated-hero::after { top: 0; }
+}
