@@ -73,7 +73,7 @@
   ];
   let running = false;
   let introUntil = 0;
-  let roomIndex = -1;
+  let roomIndex = -2;
   let audio;
   let soundOn = false;
   let lastMeow = 0;
@@ -82,16 +82,20 @@
   let nextMusicNote = 0;
   let musicPosition = 0;
   const melody = [
-    72, 76, 79, 76, 74, 77, 81, 79,
-    76, 74, 72, null, 67, 72, 74, 76,
-    69, 72, 76, 79, 77, 76, 74, null,
-    67, 71, 74, 77, 76, 74, 72, null,
+    72, 76, 79, 76, 74, 77, 81, 77,
+    76, 79, 84, 79, 81, 79, 76, null,
+    77, 81, 84, 81, 76, 79, 83, 79,
+    74, 77, 79, 71, 72, 76, 79, null,
+    84, 83, 81, 79, 76, 79, 81, 84,
+    83, 79, 77, 74, 76, 79, 84, null,
+    81, 84, 86, 84, 79, 83, 84, 79,
+    77, 76, 74, 71, 72, 76, 72, null,
   ];
-  const roomAt = (x,y) => Math.floor(y/224)*3 + Math.floor(x/320);
-  function playNote(note, when, length, volume, output = soundOutput) {
+  const roomAt = (x,y) => x < 0 ? -1 : Math.floor(y/224)*3 + Math.floor(x/320);
+  function playNote(note, when, length, volume, output = soundOutput, waveform = 'sine') {
     const oscillator = audio.createOscillator();
     const gain = audio.createGain();
-    oscillator.type = 'sine';
+    oscillator.type = waveform;
     oscillator.frequency.value = 440 * 2 ** ((note - 69) / 12);
     gain.gain.setValueAtTime(0, when);
     gain.gain.linearRampToValueAtTime(volume, when + .025);
@@ -107,13 +111,15 @@
     if (nextMusicNote < now) nextMusicNote = now + .04;
     while (nextMusicNote < now + .15) {
       const note = melody[musicPosition];
-      if (note !== null) playNote(note, nextMusicNote, .8, .055, musicOutput);
-      if (musicPosition % 8 === 0) {
-        const bass = [48, 53, 57, 55][Math.floor(musicPosition / 8)];
-        playNote(bass, nextMusicNote, 2.4, .035, musicOutput);
-        playNote(bass + 7, nextMusicNote + .04, 2.2, .018, musicOutput);
+      if (note !== null) playNote(note, nextMusicNote, .26, .045, musicOutput, 'triangle');
+      if (musicPosition % 4 === 0) {
+        const root = [48, 53, 57, 55][Math.floor(musicPosition / 8) % 4];
+        const bass = root + (musicPosition % 8 === 4 ? 7 : 0);
+        playNote(bass, nextMusicNote, .32, .045, musicOutput, 'triangle');
+        playNote(root + 16, nextMusicNote + .06, .18, .016, musicOutput);
+        playNote(root + 19, nextMusicNote + .06, .18, .016, musicOutput);
       }
-      nextMusicNote += .38;
+      nextMusicNote += .22;
       musicPosition = (musicPosition + 1) % melody.length;
     }
   }
@@ -191,6 +197,24 @@
     {name:'Nini',photo:'nini-rascador.png', fur:'#51403b', patch:'#b6784e'},
     {name:'Manchas',photo:'manchas-recostada.png', fur:'#fff0dc', patch:'#d18b51'},
   ];
+  const gardenCats = [
+    {name:'Tobias', fur:'#a69a82', patch:'#685c50', tabby:true},
+    {name:'Harfusha', fur:'#e5d3b8', patch:'#c3a886', blueEyes:true},
+  ];
+  const gardenPoses = [
+    [{x:168,y:98,pose:'sit'}, {x:190,y:98,pose:'sit'}],
+    [{x:171,y:100,pose:'cuddle'}, {x:188,y:100,pose:'cuddle'}],
+    [{x:160,y:103,pose:'lie'}, {x:195,y:99,pose:'sit'}],
+    [{x:165,y:99,pose:'sit'}, {x:195,y:103,pose:'lie'}],
+  ];
+  let gardenPose = -1;
+  const gardenObstacles = [
+    {x:26,y:155,w:82,h:43},
+    {x:28,y:40,w:39,h:46},
+    {x:253,y:31,w:40,h:48},
+  ];
+  const companions = [];
+  const trail = [];
   const pressed = new Map();
   let hiding = [];
   let found = 0;
@@ -405,22 +429,178 @@
     }
   }
 
+  function gardenPetPosition(index) {
+    return gardenPoses[Math.max(0,gardenPose)][index];
+  }
+
+  function nearbyGardenCat() {
+    const x = player.x + 320;
+    return gardenCats.find((cat,index) => {
+      const position = gardenPetPosition(index);
+      return Math.hypot(x-position.x, player.y-position.y) < 27;
+    });
+  }
+
+  function drawGardenPet(cat, position, time) {
+    const {x,y,pose} = position;
+    const bodyWidth = cat.tabby ? 22 : 16;
+    rect(x-bodyWidth/2-2,y+5,bodyWidth+4,3,'#889568');
+    if (pose === 'lie') {
+      rect(x-bodyWidth/2-4,y-1,bodyWidth+7,9,cat.fur);
+      kitten(cat,x+5,y-3);
+    } else {
+      rect(x-bodyWidth/2,y-3,bodyWidth,12,cat.fur);
+      rect(x-bodyWidth/2-4,y+5,8,3,cat.patch);
+      kitten(cat,x,y-7);
+      rect(x-6,y+7,5,2,cat.patch);
+      rect(x+2,y+7,5,2,cat.patch);
+      if (pose === 'cuddle') rect(x+(cat.tabby?6:-12),y-5,9,4,cat.fur);
+    }
+    if (cat.tabby) {
+      for (const offset of [-6,0,6]) rect(x+offset,y,2,5,cat.patch);
+      rect(x-5,y-12,3,2,cat.patch);
+      rect(x+2,y-12,3,2,cat.patch);
+    } else {
+      rect(x-4,y-7,2,2,'#7bafb8');
+      rect(x+3,y-7,2,2,'#7bafb8');
+    }
+    if (nearbyGardenCat() === cat) {
+      rect(x-3,y-27,6,2,'#fff1dc');
+      rect(x-1,y-29,2,6,'#fff1dc');
+    }
+  }
+
+  function drawGarden(time) {
+    rect(0,0,320,224,'#a8bc82');
+    for (let y=28;y<216;y+=16) {
+      for (let x=10;x<312;x+=17) rect(x,y,2,2,(x+y)%3?'#bacb95':'#90a771');
+    }
+    rect(0,6,320,13,'#e8d6ba');
+    for (let x=3;x<312;x+=15) {
+      rect(x,2,8,27,'#f4e5ce');
+      rect(x+6,3,2,25,'#d0b899');
+    }
+    rect(3,22,4,194,'#d0b899');
+    rect(7,212,304,5,'#d0b899');
+    // Pavers lead from the parking area to the living-room entrance.
+    for (let x=112;x<314;x+=24) {
+      rect(x,123,22,27,'#d6c7af');
+      rect(x+2,125,18,2,'#e8deca');
+    }
+    for (let y=151;y<201;y+=24) rect(112,y,22,21,'#d6c7af');
+    rect(136,82,77,34,'#d9d9ac');
+    rect(140,85,69,28,'#ede4bd');
+    rect(306,98,14,59,'#ba8a6b');
+    rect(311,104,9,47,'#ead8b8');
+    rect(316,118,4,32,'#fff0d5');
+    label('CASA >',258,115,'#5d694d');
+    const tree = (x,y) => {
+      rect(x+13,y+24,10,22,'#997254');
+      rect(x+6,y+41,27,4,'#8fa171');
+      rect(x+3,y+3,29,29,'#668b67');
+      rect(x-3,y+10,41,18,'#668b67');
+      rect(x+4,y,24,24,'#83a776');
+      rect(x+7,y+4,10,4,'#a7bd84');
+      rect(x+27,y+15,7,8,'#5d7f5c');
+    };
+    tree(31,40);
+    tree(255,31);
+    // White parked car with windows, lights, wheels and a visible driveway.
+    rect(20,148,95,56,'#c1b8a7');
+    rect(30,158,76,39,'#8b8d83');
+    rect(25,165,7,10,'#575d5d');
+    rect(25,184,7,10,'#575d5d');
+    rect(100,165,7,10,'#575d5d');
+    rect(100,184,7,10,'#575d5d');
+    rect(30,155,72,42,'#fffaf0');
+    rect(39,161,48,29,'#e4e8df');
+    rect(46,163,34,11,'#8eb5bc');
+    rect(46,180,34,8,'#a3c1c2');
+    rect(33,159,5,7,'#f1d68a');
+    rect(93,159,5,7,'#f1d68a');
+    rect(33,189,5,5,'#d8928c');
+    rect(93,189,5,5,'#d8928c');
+    for (const [x,y] of [[82,52],[224,186],[270,183],[18,114],[230,49]]) {
+      rect(x,y,17,10,'#819b65');
+      rect(x+4,y-3,3,5,'#f0bdc6');
+      rect(x+11,y-1,3,5,'#f0d28f');
+    }
+    rect(21,98,35,16,'#bc8a64');
+    rect(23,96,31,4,'#e5ba88');
+    rect(24,114,4,8,'#90684e');
+    rect(49,114,4,8,'#90684e');
+    gardenCats.forEach((cat,index) => drawGardenPet(cat,gardenPetPosition(index),time));
+  }
+
+  async function gardenMeow() {
+    try {
+      if (audio?.state !== 'running') await unlockAudio();
+      const now = audio.currentTime;
+      const voice = audio.createOscillator();
+      const filter = audio.createBiquadFilter();
+      const gain = audio.createGain();
+      voice.type = 'sawtooth';
+      voice.frequency.setValueAtTime(520,now);
+      voice.frequency.exponentialRampToValueAtTime(760,now+.12);
+      voice.frequency.exponentialRampToValueAtTime(390,now+.48);
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(1300,now);
+      filter.frequency.linearRampToValueAtTime(750,now+.5);
+      filter.Q.value = 2.5;
+      gain.gain.setValueAtTime(.0001,now);
+      gain.gain.linearRampToValueAtTime(.1,now+.07);
+      gain.gain.exponentialRampToValueAtTime(.0001,now+.55);
+      voice.connect(filter).connect(gain).connect(soundOutput);
+      voice.start(now);
+      voice.stop(now+.56);
+      voice.onended = () => {voice.disconnect();filter.disconnect();gain.disconnect();};
+    } catch {
+      message.textContent += ' Activa el audio para escuchar su miau.';
+    }
+  }
+
+  function followerPositions() {
+    return companions.map((cat,index) => {
+      let remaining = 23 + index*22;
+      for (let i=1;i<trail.length;i++) {
+        const a=trail[i-1], b=trail[i];
+        const distance=Math.hypot(b.x-a.x,b.y-a.y);
+        if (distance >= remaining && distance > 0) {
+          const fraction=remaining/distance;
+          return {cat,x:a.x+(b.x-a.x)*fraction,y:a.y+(b.y-a.y)*fraction};
+        }
+        remaining-=distance;
+      }
+      const tail=trail.at(-1) || player;
+      return {cat,x:tail.x,y:tail.y};
+    });
+  }
+
   function draw(time) {
     const index = roomAt(player.x,player.y);
-    const ox = (index%3)*320, oy=Math.floor(index/3)*224;
+    const ox = index === -1 ? -320 : (index%3)*320;
+    const oy = index === -1 ? 0 : Math.floor(index/3)*224;
     if(index!==roomIndex){
       roomIndex=index;
       if(running) {
         lastMeow=time;
       }
-      roomName.textContent=rooms[index][0];
-      roomMap.textContent='Habitación '+(index+1)+' de '+rooms.length;
+      if (index === -1) {
+        gardenPose = (gardenPose + 1 + Math.floor(Math.random()*(gardenPoses.length-1))) % gardenPoses.length;
+        message.textContent='Tobias y Harfusha te esperan en el jardín. Acércate y pulsa Saludar.';
+      }
+      roomName.textContent=index === -1 ? 'Jardín de casa' : rooms[index][0];
+      roomMap.textContent=index === -1 ? 'Una visita a Tobias y Harfusha' : 'Habitación '+(index+1)+' de '+rooms.length;
+      document.querySelector('#game-search').textContent=index === -1 ? 'Saludar ♡' : 'Buscar ♡';
     }
+    if (index === -1) {
+      drawGarden(time);
+    } else {
     rect(0,0,320,224,'#674d60');
     rect(8,8,304,208,'#e5bb96');
     rect(8,8,304,27,rooms[index][1]);
     const decorations = decorateRoom(index);
-    if(index%3>0)rect(0,114,8,44,'#d6a886');
+    if(index%3>0 || index===0)rect(0,114,8,44,'#d6a886');
     if(index%3<2)rect(312,114,8,44,'#d6a886');
     if(index>=3)rect(140,0,40,8,'#d6a886');
     if(index<3)rect(140,216,40,8,'#d6a886');
@@ -429,7 +609,6 @@
     const target=nearby();
     places.filter(p=>p.room===index).forEach(p=>{
       if (p.room !== 4 || p.name !== 'buró') furniture(p,p.kind);
-      if(p.cat)kitten(p.cat,p.x+p.w/2,p.y+p.h+10);
       if(p===target) {
         const bx = Math.round(p.x+p.w/2-7);
         const by = Math.round(p.y+p.h+4);
@@ -446,9 +625,13 @@
     if (index === 0) decorateLivingRoom();
     if (index === 3) decorateLaundry();
     if (index === 4) decorateBedroom();
+    if (index === 0) {
+      label('< JARDIN',12,110,'#6e4855');
+    }
+    }
     ctx.save();
     ctx.translate(-ox,-oy);
-    if (running && time < introUntil) {
+    if (index === 0 && running && time < introUntil) {
       const progress = Math.max(0, 1 - (introUntil-time)/2200);
       cats.forEach((cat,i) => {
         const distance = Math.max(0,Math.min(1,progress*1.35-i*.22));
@@ -463,6 +646,11 @@
         }
       });
     }
+    followerPositions().filter(p => roomAt(p.x,p.y) === index).forEach(p => {
+      rect(p.x-9,p.y+1,16,6,p.cat.fur);
+      rect(p.x-13,p.y+1,5,2,p.cat.patch);
+      kitten(p.cat,p.x,p.y-2);
+    });
     const {x,y,facing}=player;
     const stride=pressed.size ? (Math.floor(steps/7)%2 ? 2:-2):0;
     rect(x-7,y+1,14,4,'#ba8e7d');
@@ -510,13 +698,13 @@
     'Foto de recuerdo': '<path fill="#fff4e0" d="M2 2h28v30H2z"/><path fill="#b5c8bb" d="M5 5h22v19H5z"/><path fill="#795c51" d="M9 9h4v3h6V9h4v12H9z"/><path fill="#e0a16a" d="M10 12h5v7h-5z"/><path fill="#513444" d="M12 16h2v2h-2zM19 16h2v2h-2z"/>',
     'Un pelito': '<path fill="#e3b87c" d="M6 2h4v4H6zM10 6h4v8h-4zM14 14h4v8h-4zM10 22h4v6h-4zM6 28h4v4H6z"/><path fill="#fff0dc" d="M22 5h3v3h-3zM27 10h3v3h-3z"/>',
   };
-  function showDiscovery(name, cat) {
+  function showDiscovery(name, cat, greeting = false) {
     clearTimeout(discoveryTimer);
     discovery.classList.toggle('cat-discovery', Boolean(cat));
     discovery.classList.toggle('manchas-discovery', cat?.name === 'Manchas');
     const catArt = cat ? '<path fill="'+cat.fur+'" d="M3 2h5v4h16V2h5v25h-5v3H8v-3H3z"/><path fill="'+cat.patch+'" d="M5 6h8v12H5zM21 17h6v8h-6z"/><path fill="#573747" d="M8 18h3v3H8zM22 18h3v3h-3z"/><path fill="#e3a2bc" d="M14 23h4v3h-4z"/>' : itemArt[name];
     discoveryIcon.innerHTML = '<svg viewBox="0 0 32 32" aria-hidden="true" shape-rendering="crispEdges">'+catArt+'</svg>';
-    discoveryTitle.textContent = cat ? '¡Encontraste a '+name+'!' : '¡Encontraste '+name.toLowerCase()+'!';
+    discoveryTitle.textContent = greeting ? name+' · ¡Miau!' : cat ? '¡Encontraste a '+name+'!' : '¡Encontraste '+name.toLowerCase()+'!';
     discovery.hidden = false;
     discovery.classList.remove('discovery-pop');
     void discovery.offsetWidth;
@@ -526,6 +714,17 @@
 
   function search() {
     if(!running || last<introUntil) return;
+    if (roomAt(player.x,player.y) === -1) {
+      const cat=nearbyGardenCat();
+      if (cat) {
+        showDiscovery(cat.name,cat,true);
+        message.textContent=cat.name+' te saluda. ¡Miau! Aquí solo venimos a pasar un ratito juntos.';
+        gardenMeow();
+      } else {
+        message.textContent='Este jardín es para descansar. Acércate a Tobias o Harfusha para saludarlos.';
+      }
+      return;
+    }
     const place=nearby();
     if(!place){message.textContent='Acércate a un mueble hasta que aparezca un signo de interrogación.';return;}
     place.checked=true;
@@ -552,6 +751,7 @@
       return;
     }
     place.cat=cat;
+    companions.push(cat);
     showDiscovery(cat.name, cat);
     discoverySound(true);
     const card=document.createElement('figure');
@@ -563,7 +763,7 @@
     album.append(card);
     found++;
     count.textContent=found+' de 2 gatitas';
-    message.textContent=found===2?'¡Encontraste a Nini y Manchas! Tu álbum está completo ♡':'¡Encontraste a '+cat.name+'! Falta su compañera.';
+    message.textContent=found===2?'¡Encontraste a Nini y Manchas! Ahora las dos te acompañan ♡':'¡Encontraste a '+cat.name+'! Ahora te sigue. Falta su compañera.';
   }
 
   function reset() {
@@ -588,6 +788,10 @@
     treasures.replaceChildren();
     treasureCount.textContent='0 de '+souvenirs.length+' encontrados';
     player.x=78;player.y=165;player.facing=1;
+    companions.length=0;
+    trail.length=0;
+    trail.push({x:player.x,y:player.y});
+    gardenPose=-1;
     pressed.clear();found=0;album.replaceChildren();
     count.textContent='0 de 2 gatitas';
     message.textContent='Revisa los muebles. Las puertas conectan las habitaciones.';
@@ -596,14 +800,25 @@
   function move(dx,dy) {
     if(!running || last<introUntil) return;
     const x=player.x+dx,y=player.y+dy;
-    if(x<4||x>=956||y<4||y>=444) return;
-    const localX=x%320, localY=y%224;
-    if ((localX<12||localX>308) && (localY<118||localY>154)) return;
-    if ((localY<13||localY>212) && (localX<146||localX>174)) return;
-    if(places.some(p=>x+5>p.x&&x-5<p.x+p.w&&y>p.y&&y-5<p.y+p.h)) return;
+    if(x < -312 || x >= 956 || y < 4 || y >= 444) return;
+    // The only garden connection is the living room's left doorway.
+    if (x < 0) {
+      if (y < 29 || y > 208) return;
+      const gardenX=x+320;
+      if (gardenObstacles.some(p => gardenX+6>p.x && gardenX-6<p.x+p.w && y>p.y && y-5<p.y+p.h)) return;
+    }
+    if (x > -12 && x < 12 && (y < 118 || y > 154)) return;
+    if (x >= 0) {
+      const localX=x%320, localY=y%224;
+      if ((localX<12||localX>308) && (localY<118||localY>154)) return;
+      if ((localY<13||localY>212) && (localX<146||localX>174)) return;
+      if(places.some(p=>x+5>p.x&&x-5<p.x+p.w&&y>p.y&&y-5<p.y+p.h)) return;
+    }
     player.x=x;player.y=y;
     if(dx) player.facing=Math.sign(dx);
     steps+=Math.hypot(dx,dy);
+    trail.unshift({x,y});
+    if (trail.length > 500) trail.pop();
   }
 
   function frame(time) {
@@ -616,7 +831,7 @@
     }
     if(introUntil && time>=introUntil){
       introUntil=0;
-      message.textContent='¡Se escondieron! Revisa los muebles y guarda los tesoros que encuentres.';
+      message.textContent='¡Se escondieron! Busca dentro de casa. Por la puerta izquierda de la sala puedes visitar el jardín.';
     }
     if(running && !introUntil && time-lastMeow>5600){
       lastMeow=time;
@@ -663,7 +878,7 @@
     running=true;
     introUntil=reduced.matches ? 0 : last+2200;
     lastMeow=last;
-    roomIndex=-1;
+    roomIndex=-2;
     if(introUntil) message.textContent='¡Ahí van Nini y Manchas!';
     canvas.focus({preventScroll:true});
   }
