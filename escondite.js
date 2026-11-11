@@ -212,6 +212,7 @@
     {x:26,y:155,w:82,h:43},
     {x:28,y:40,w:39,h:46},
     {x:253,y:31,w:40,h:48},
+    {x:151,y:54,w:50,h:27},
   ];
   const companions = [];
   const trail = [];
@@ -488,8 +489,29 @@
       rect(x+2,125,18,2,'#e8deca');
     }
     for (let y=151;y<201;y+=24) rect(112,y,22,21,'#d6c7af');
-    rect(136,82,77,34,'#d9d9ac');
-    rect(140,85,69,28,'#ede4bd');
+    // Warm darker sand keeps Harfusha's cream coat readable in every pose.
+    rect(136,82,77,34,'#927356');
+    rect(140,85,69,28,'#b18c69');
+    for (const [x,y] of [[145,89],[154,109],[179,88],[203,108],[196,91],[143,105]])
+      rect(x,y,2,1,'#9e7a59');
+    // Little wooden cat cottage behind their shared resting spot.
+    rect(148,77,57,5,'#8c9367');
+    rect(151,53,50,26,'#946b53');
+    rect(154,55,44,23,'#d6ad83');
+    for(let y=59;y<77;y+=6) rect(155,y,42,1,'#bd906c');
+    rect(169,61,14,17,'#634c45');
+    rect(172,58,8,3,'#634c45');
+    rect(171,75,10,3,'#bc8c71');
+    // Stepped rosy roof with generous eaves, entirely on the pixel grid.
+    for(let row=0;row<9;row++) {
+      const half=4+row*3;
+      rect(176-half,34+row*2,half*2,2,'#855363');
+      if(row>0) rect(177-half,34+row*2,half*2-2,1,'#b77b87');
+    }
+    rect(146,51,60,3,'#855363');
+    rect(190,60,5,6,'#f3dfb4');
+    rect(192,60,1,6,'#aa7c61');
+    rect(190,63,5,1,'#aa7c61');
     rect(306,98,14,59,'#ba8a6b');
     rect(311,104,9,47,'#ead8b8');
     rect(316,118,4,32,'#fff0d5');
