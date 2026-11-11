@@ -202,10 +202,10 @@
     {name:'Harfusha', fur:'#e5d3b8', patch:'#c3a886', blueEyes:true},
   ];
   const gardenPoses = [
-    [{x:168,y:98,pose:'sit'}, {x:190,y:98,pose:'sit'}],
-    [{x:171,y:100,pose:'cuddle'}, {x:188,y:100,pose:'cuddle'}],
-    [{x:160,y:103,pose:'lie'}, {x:195,y:99,pose:'sit'}],
-    [{x:165,y:99,pose:'sit'}, {x:195,y:103,pose:'lie'}],
+    [{x:163,y:98,pose:'sit'}, {x:195,y:98,pose:'sit'}],
+    [{x:164,y:100,pose:'cuddle'}, {x:195,y:100,pose:'cuddle'}],
+    [{x:158,y:103,pose:'lie'}, {x:197,y:99,pose:'sit'}],
+    [{x:161,y:99,pose:'sit'}, {x:198,y:103,pose:'lie'}],
   ];
   let gardenPose = -1;
   const gardenObstacles = [
