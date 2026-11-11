@@ -493,7 +493,6 @@
     rect(306,98,14,59,'#ba8a6b');
     rect(311,104,9,47,'#ead8b8');
     rect(316,118,4,32,'#fff0d5');
-    label('CASA >',258,115,'#5d694d');
     const tree = (x,y) => {
       rect(x+13,y+24,10,22,'#997254');
       rect(x+6,y+41,27,4,'#8fa171');
@@ -505,21 +504,51 @@
     };
     tree(31,40);
     tree(255,31);
-    // White parked car with windows, lights, wheels and a visible driveway.
+    // Original three-quarter pixel car, drawn on a two-pixel grid.
     rect(20,148,95,56,'#c1b8a7');
-    rect(30,158,76,39,'#8b8d83');
-    rect(25,165,7,10,'#575d5d');
-    rect(25,184,7,10,'#575d5d');
-    rect(100,165,7,10,'#575d5d');
-    rect(100,184,7,10,'#575d5d');
-    rect(30,155,72,42,'#fffaf0');
-    rect(39,161,48,29,'#e4e8df');
-    rect(46,163,34,11,'#8eb5bc');
-    rect(46,180,34,8,'#a3c1c2');
-    rect(33,159,5,7,'#f1d68a');
-    rect(93,159,5,7,'#f1d68a');
-    rect(33,189,5,5,'#d8928c');
-    rect(93,189,5,5,'#d8928c');
+    const carPixel = (x,y,w,h,color) => rect(23+x*2,149+y*2,w*2,h*2,color);
+    const carShape = (points,color) => {
+      for (let y=0;y<26;y++) {
+        const edges=[];
+        for(let i=0;i<points.length;i++) {
+          const a=points[i],b=points[(i+1)%points.length];
+          if((a[1]<=y+.5 && b[1]>y+.5)||(b[1]<=y+.5 && a[1]>y+.5))
+            edges.push(a[0]+(y+.5-a[1])*(b[0]-a[0])/(b[1]-a[1]));
+        }
+        edges.sort((a,b)=>a-b);
+        for(let i=0;i<edges.length;i+=2) carPixel(Math.round(edges[i]),y,Math.round(edges[i+1])-Math.round(edges[i]),1,color);
+      }
+    };
+    const ink='#394549', shade='#b5c0bc', white='#fffdf3', glass='#8eafb5';
+    carPixel(3,21,38,3,'#9c9c8e');
+    carShape([[1,12],[3,8],[10,3],[17,1],[26,3],[32,11],[42,15],[43,21],[35,24],[10,22],[1,18]],ink);
+    carShape([[3,11],[10,5],[18,3],[26,5],[30,12],[19,16],[3,15]],shade);
+    carShape([[9,5],[17,2],[25,4],[28,7],[18,10]],white);
+    // Rear side window and driver's window, framed in charcoal.
+    carShape([[5,10],[10,6],[16,8],[15,14],[5,13]],ink);
+    carShape([[7,10],[10,8],[14,9],[13,12],[7,12]],glass);
+    carShape([[17,8],[24,6],[29,12],[28,16],[17,14]],ink);
+    carShape([[19,9],[24,8],[27,12],[26,14],[19,13]],glass);
+    carPixel(20,9,3,1,'#cbe0dd');
+    // Far windshield and gently sloped white hood.
+    carShape([[29,9],[32,12],[40,15],[29,18],[21,15]],ink);
+    carShape([[30,11],[32,13],[37,15],[29,16],[24,15]],glass);
+    carShape([[3,14],[15,15],[28,19],[28,23],[19,22],[15,19],[11,19],[9,21],[3,18]],'#e1e5dc');
+    carShape([[29,17],[38,15],[42,17],[41,19],[31,22],[25,20]],white);
+    carShape([[30,21],[42,18],[42,21],[33,24],[29,23]],shade);
+    carPixel(17,16,3,1,'#7d918f');
+    carPixel(16,16,1,4,'#b5c0bc');
+    // Two visible tires with stepped round silhouettes and silver hubs.
+    for(const [x,y] of [[7,17],[27,21]]) {
+      carPixel(x+1,y-2,4,1,ink);carPixel(x,y-1,6,5,ink);carPixel(x+1,y+4,4,1,ink);
+      carPixel(x+2,y-1,2,1,'#929d9a');carPixel(x+1,y,4,3,'#697777');carPixel(x+2,y,2,3,'#a9b2ac');
+    }
+    // Front grille, warm lamps, bumper, rear lamp and side mirror.
+    carShape([[33,21],[40,19],[40,21],[33,23]],ink);
+    carPixel(34,21,1,1,'#96a29a');carPixel(37,20,1,1,'#96a29a');
+    carPixel(30,20,3,2,'#f7dd89');carPixel(40,18,2,2,'#f7dd89');
+    carPixel(31,20,2,1,'#fff3c3');carPixel(2,14,2,3,'#ce837e');
+    carPixel(33,24,8,1,ink);carPixel(29,15,3,2,ink);carPixel(29,15,2,1,'#e1e5dc');
     for (const [x,y] of [[82,52],[224,186],[270,183],[18,114],[230,49]]) {
       rect(x,y,17,10,'#819b65');
       rect(x+4,y-3,3,5,'#f0bdc6');
@@ -626,7 +655,6 @@
     if (index === 3) decorateLaundry();
     if (index === 4) decorateBedroom();
     if (index === 0) {
-      label('< JARDIN',12,110,'#6e4855');
     }
     }
     ctx.save();
